@@ -7,6 +7,7 @@ import copy
 from scipy.interpolate import Akima1DInterpolator
 import matplotlib.pyplot as plt
 from PyAstronomy import pyasl
+from astropy.io import fits
 
 import spectrum as sp
 import regionLogic
@@ -58,9 +59,16 @@ class normAppLogic:
             http://archive.eso.org/cms/eso-data/help/1dspectra.html
             https://www.hs.uni-hamburg.de/DE/Ins/Per/Czesla/PyA/PyA/pyaslDoc/aslDoc/readFitsSpec.html
             """
-            self.spectrum.wave, self.spectrum.flux = pyasl.read1dFitsSpec(fileName)
-            # self.spectrum.wave = self.spectrum.wave.byteswap().newbyteorder()
-            self.spectrum.flux = self.spectrum.flux.byteswap().newbyteorder() #TODO PyAstronomy bug
+            if "_tpl" in fileName:
+                fits_file = fits.open(fileName)
+                self.spectrum.flux = fits_file[1].data["cflux"]
+                self.spectrum.wave = fits_file[1].data["lambda"]
+                # mwave = fits_file[1].data["mlambda"]
+                self.spectrum.wave = self.spectrum.wave * 1000
+            else:
+                self.spectrum.wave, self.spectrum.flux = pyasl.read1dFitsSpec(fileName)
+                # self.spectrum.wave = self.spectrum.wave.byteswap().newbyteorder()
+                self.spectrum.flux = self.spectrum.flux.byteswap().newbyteorder()  # TODO PyAstronomy bug
             self.spectrum.name = fileName
         self.radialVelocity = 0.0
         self.oryginalWavelength = copy.deepcopy(self.spectrum.wave)
