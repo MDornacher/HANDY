@@ -65,6 +65,7 @@ class normAppLogic:
                 self.spectrum.wave = fits_file[1].data["lambda"]
                 # mwave = fits_file[1].data["mlambda"]
                 self.spectrum.wave = self.spectrum.wave * 1000
+                fits_file.close()
             else:
                 self.spectrum.wave, self.spectrum.flux = pyasl.read1dFitsSpec(fileName)
                 # self.spectrum.wave = self.spectrum.wave.byteswap().newbyteorder()
