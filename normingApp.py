@@ -35,7 +35,6 @@ class NormSpectra(tkinter.Tk):
         self.radVelDialog = None
 
         self.fileList = []
-        self.currentFile = ""
 
     def __init__(self):
         tkinter.Tk.__init__(self)
@@ -536,9 +535,9 @@ class NormSpectra(tkinter.Tk):
         self.span.set_visible(True)
 
     def onNextSpectrum(self):
-        if not self.currentFile:  # do nothing if no files yet selected
+        if not self.appLogic.spectrum.name:  # do nothing if no files yet selected
             return
-        currentIndex = self.fileList.index(self.currentFile)
+        currentIndex = self.fileList.index(self.appLogic.spectrum.name)
         nextIndex = (currentIndex + 1) % len(self.fileList)
         fileName = self.fileList[nextIndex]
         self.currentFile = fileName
