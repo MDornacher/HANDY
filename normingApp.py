@@ -142,7 +142,6 @@ class NormSpectra(tkinter.Tk):
         if answer:
             self.fileList = answer
             fileName = self.fileList[0]
-            self.currentFile = fileName
             print(os.path.basename(fileName))  # TODO: remove me
             skipRows=1
             colWave=0
@@ -540,7 +539,6 @@ class NormSpectra(tkinter.Tk):
         currentIndex = self.fileList.index(self.appLogic.spectrum.name)
         nextIndex = (currentIndex + 1) % len(self.fileList)
         fileName = self.fileList[nextIndex]
-        self.currentFile = fileName
         print(os.path.basename(fileName))  # TODO: remove me
         skipRows = 1
         colWave = 0
