@@ -144,7 +144,7 @@ class NormSpectra(tkinter.Tk):
             self.fileList = answer
             fileName = self.fileList[0]
             self.currentFile = fileName
-            print(fileName)  # TODO: remove me
+            print(os.path.basename(fileName))  # TODO: remove me
             skipRows=1
             colWave=0
             colFlux=1
@@ -542,7 +542,7 @@ class NormSpectra(tkinter.Tk):
         nextIndex = (currentIndex + 1) % len(self.fileList)
         fileName = self.fileList[nextIndex]
         self.currentFile = fileName
-        print(fileName)  # TODO: remove me
+        print(os.path.basename(fileName))  # TODO: remove me
         skipRows = 1
         colWave = 0
         colFlux = 1
@@ -560,7 +560,6 @@ class NormSpectra(tkinter.Tk):
 
         contRegionsWaveAndFlux = self.appLogic.getContinuumRangesForPlot()
         self.replotUpdatedRanges(contRegionsWaveAndFlux, ifAutoscale=True)
-        return
 
     def onAutoFitSpecialPoints(self):
         self.appLogic.continuumRegionsLogic.autoFitPoints(self.appLogic.theoreticalSpectrum)
