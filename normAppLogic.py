@@ -84,6 +84,7 @@ class normAppLogic:
                 waveKey = "lambda"
                 fluxKey = "cflux"
 
+                fitsData = fits_file[hduIndex].data
                 self.spectrum.wave = fitsData[waveKey]
                 self.spectrum.flux = fitsData[fluxKey]
 
