@@ -45,17 +45,18 @@ class normAppLogic:
 
     def _ask_multiple_choice_question(self,prompt,options):
         # source: https://stackoverflow.com/questions/42581016/how-do-i-display-a-dialog-that-asks-the-user-multi-choice-question-using-tkinter
-        win = tkinter.Tk()
-        if prompt:
-            tkinter.Label(win, text=prompt).pack()
-        v = tkinter.IntVar()
-        for i, option in enumerate(options):
-            tkinter.Radiobutton(win, text=option, variable=v, value=i).pack(anchor="w")
-        tkinter.Button(text="Submit", command=win.destroy).pack()
-        win.mainloop()
-        if v.get() == 0:
-            return None
-        return options[v.get()]
+        pass
+        #win = tkinter.Toplevel()
+        #if prompt:
+        #    tkinter.Label(win, text=prompt).pack()
+        #v = tkinter.IntVar()
+        #for i, option in enumerate(options):
+        #    tkinter.Radiobutton(win, text=option, variable=v, value=i).pack(anchor="w")
+        #tkinter.Button(text="Submit", command=win.destroy).pack()
+        #win.mainloop()
+        #if v.get() == 0:
+        #    return None
+        #return options[v.get()]
 
 
     def readSpectrum(self,fileName,colWave=0,colFlux=1,skipRows=0):
@@ -78,20 +79,26 @@ class normAppLogic:
             if "_tpl" in fileName:
                 fits_file = fits.open(fileName)
 
-                hduIndex = self._ask_multiple_choice_question("Select HDU", range(len(fits_file)))
-                #hduIndex = 1  # for molecfit
-
-                fitsData = fits_file[hduIndex].data
-
-                waveKey = self._ask_multiple_choice_question("Select wave key", fitsData.names)
-                fluxKey = self._ask_multiple_choice_question("Select flux key", fitsData.names)
-                # waveKey = "lambda"
-                # fluxKey = "cflux"
+                # HARD CODED
+                hduIndex = 1  # for molecfit
+                waveKey = "lambda"
+                fluxKey = "cflux"
 
                 self.spectrum.wave = fitsData[waveKey]
                 self.spectrum.flux = fitsData[fluxKey]
 
                 self.spectrum.wave = self.spectrum.wave * 1000
+
+                # DYNAMIC GUI SELECTION
+                # hduIndex = self._ask_multiple_choice_question("Select HDU", range(len(fits_file)))
+                # fitsData = fits_file[hduIndex].data
+
+                # waveKey = self._ask_multiple_choice_question("Select wave key", fitsData.names)
+                # self.spectrum.wave = fitsData[waveKey]
+
+                # fluxKey = self._ask_multiple_choice_question("Select flux key", fitsData.names)
+                # self.spectrum.flux = fitsData[fluxKey]
+
                 fits_file.close()
             else:
                 self.spectrum.wave, self.spectrum.flux = pyasl.read1dFitsSpec(fileName)
