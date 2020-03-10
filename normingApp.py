@@ -204,8 +204,9 @@ class NormSpectra(tkinter.Tk):
 
     def onSaveNormedSpectrum(self):
         initialName = "out.norm"
-        if self.appLogic.spectrum.name is not None:
-            initialName = self.appLogic.spectrum.name.split('.')[-2]+".norm"
+        if self.appLogic.spectrum.name:
+            ititialName =  os.path.basename(self.appLogic.spectrum.name).replace(".fits", ".norm")
+            #initialName = self.appLogic.spectrum.name.split('.')[-2]+".norm"
         fileName = filedialog.asksaveasfilename(initialfile=initialName)
         if fileName and self.appLogic.spectrum.wave is not None:
             # self.appLogic.saveNormedSpectrum(fileName,self.ifSaveCorrectedvrad.get())
@@ -213,7 +214,7 @@ class NormSpectra(tkinter.Tk):
 
     def onSaveVelocityCorrectedNormedSpectrum(self):
         initialName = "out.norm"
-        if self.appLogic.spectrum.name is not None:
+        if self.appLogic.spectrum.name:
             initialName = self.appLogic.spectrum.name.split('.')[-2]+"_rv.norm"
         fileName = filedialog.asksaveasfilename(initialfile=initialName)
         if fileName and self.appLogic.spectrum.wave is not None:
@@ -222,8 +223,8 @@ class NormSpectra(tkinter.Tk):
 
     def onSaveContinuum(self):
         initialName = "out.cont"
-        if self.appLogic.spectrum.name is not None:
-            initialName = self.appLogic.spectrum.name.split('.')[-2]+".cont"
+        if self.appLogic.spectrum.name:
+            initialName = os.path.basename(self.appLogic.spectrum.name).replace(".fits", ".cont")
         fileName = filedialog.asksaveasfilename(initialfile=initialName)
         if fileName and self.appLogic.spectrum.wave is not None:
             self.appLogic.continuumRegionsLogic.saveRegionsFile(self.appLogic.spectrum,\
