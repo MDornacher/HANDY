@@ -249,8 +249,16 @@ class NormSpectra(tkinter.Tk):
             self.appLogic.saveTheoreticalSpectrum(fileName)
 
     def onQuickSave(self):
-        self.onSaveNormedSpectrum()
-        self.onSaveContinuum()
+        # Save Normed Spectrum
+        fileName = self.appLogic.spectrum.name.replace(".fits", ".norm")
+        if fileName and self.appLogic.spectrum.wave is not None:
+            # self.appLogic.saveNormedSpectrum(fileName,self.ifSaveCorrectedvrad.get())
+            self.appLogic.saveNormedSpectrum(fileName,False)
+
+        #  Save Continuum
+        fileName = self.appLogic.spectrum.name.replace(".fits", ".cont")
+        if fileName and self.appLogic.spectrum.wave is not None:
+            self.appLogic.continuumRegionsLogic.saveRegionsFile(self.appLogic.spectrum, fileName)
 
     def createControls(self):
         # Create several frames for grouping buttons
