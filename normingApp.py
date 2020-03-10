@@ -80,6 +80,8 @@ class NormSpectra(tkinter.Tk):
                               command=self.onSaveContinuum)
         fileMenu2.add_command(label="Save theoretical spectrum",\
                               command=self.onSaveTheoreticalSpectrum)
+        fileMenu2.add_command(label="Quick save",\
+                              command=self.onQuickSave)
         #------------------------------------
         fileMenu3 = tkinter.Menu(menu)
         menu.add_cascade(label="Grids", underline=0, menu=fileMenu3)
@@ -214,8 +216,7 @@ class NormSpectra(tkinter.Tk):
     def onSaveNormedSpectrum(self):
         initialName = "out.norm"
         if self.appLogic.spectrum.name:
-            ititialName =  os.path.basename(self.appLogic.spectrum.name).replace(".fits", ".norm")
-            #initialName = self.appLogic.spectrum.name.split('.')[-2]+".norm"
+            initialName = os.path.basename(self.appLogic.spectrum.name).replace(".fits", ".norm")
         fileName = filedialog.asksaveasfilename(initialfile=initialName)
         if fileName and self.appLogic.spectrum.wave is not None:
             # self.appLogic.saveNormedSpectrum(fileName,self.ifSaveCorrectedvrad.get())
@@ -246,6 +247,10 @@ class NormSpectra(tkinter.Tk):
         fileName = filedialog.asksaveasfilename(initialfile=initialName)
         if fileName and self.appLogic.theoreticalSpectrum.wave is not None:
             self.appLogic.saveTheoreticalSpectrum(fileName)
+
+    def onQuickSave(self):
+        self.onSaveNormedSpectrum()
+        self.onSaveContinuum()
 
     def createControls(self):
         # Create several frames for grouping buttons
