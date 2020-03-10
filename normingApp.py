@@ -151,6 +151,11 @@ class NormSpectra(tkinter.Tk):
                                        colFlux=colFlux,\
                                        skipRows=skipRows)
 
+            extContinuum = fileName.replace(".fits", ".cont")
+            if os.path.exists(extContinuum):
+                self.onLoadContinuum(extContinuum=extContinuum)
+
+
         self.appLogic.continuumRegionsLogic.updateRegionsAndPoints(self.appLogic.spectrum)
         self.appLogic.continuum.wave = []
         self.appLogic.continuum.flux = []
@@ -162,10 +167,14 @@ class NormSpectra(tkinter.Tk):
         self.replotUpdatedRanges(contRegionsWaveAndFlux,ifAutoscale=True)
 
 
-    def onLoadContinuum(self):
-        dirname = os.getcwd()
-        ftypes = [('Plain text', '*.cont'),('All files', '*')]
-        answer = filedialog.askopenfilenames(title="Open ranges file...", initialdir=dirname, filetypes=ftypes)
+    def onLoadContinuum(self, extContinuum=None):
+        if not extContinuum:
+            dirname = os.getcwd()
+            ftypes = [('Plain text', '*.cont'),('All files', '*')]
+            answer = filedialog.askopenfilenames(title="Open ranges file...", initialdir=dirname, filetypes=ftypes)
+        else:
+            answer = [extContinuum]
+
         if answer:
             fileName = answer[0]
             self.appLogic.continuumRegionsLogic.readRegionsFile(self.appLogic.spectrum,\
@@ -548,6 +557,10 @@ class NormSpectra(tkinter.Tk):
                                    colWave=colWave, \
                                    colFlux=colFlux, \
                                    skipRows=skipRows)
+
+        extContinuum = fileName.replace(".fits", ".cont")
+        if os.path.exists(extContinuum):
+            self.onLoadContinuum(extContinuum=extContinuum)
 
         self.appLogic.continuumRegionsLogic.updateRegionsAndPoints(self.appLogic.spectrum)
         self.appLogic.continuum.wave = []
