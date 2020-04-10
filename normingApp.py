@@ -269,7 +269,9 @@ class NormSpectra(tkinter.Tk):
         # TODO: please build me
         # TODO: update instead of append, otherwise a second click would append and append and append and append...
         print("¯\_(ツ)_/¯")
-        pass
+        fileName = self.appLogic.spectrum.name
+        if fileName and self.appLogic.spectrum.wave:
+            self.appLogic.saveNormedSpectrum(fileName)
 
     def createControls(self):
         # Create several frames for grouping buttons

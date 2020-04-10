@@ -27,6 +27,12 @@ def saveSpectrum(filename,spectrum):
             #f.write('# wave , flux\n')
             saveSpec.to_csv(f,columns=['wave','flux'],index=None,sep=' ',header=True)
 
+def appendToFITS(filename):
+    pass
+
+def updateFITS(filename):
+    pass
+
 class Spectrum:
 
     def __init__(self,name=None,\

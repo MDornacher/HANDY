@@ -76,7 +76,7 @@ class normAppLogic:
             http://archive.eso.org/cms/eso-data/help/1dspectra.html
             https://www.hs.uni-hamburg.de/DE/Ins/Per/Czesla/PyA/PyA/pyaslDoc/aslDoc/readFitsSpec.html
             """
-            if "_tpl" in fileName:
+            if "_tpl" in fileName:  # TODO: this tpl is actually a typo and should be tac
                 fits_file = fits.open(fileName)
 
                 # HARD CODED
@@ -143,6 +143,14 @@ class normAppLogic:
     def saveTheoreticalSpectrum(self,fileName):
         sp.saveSpectrum(fileName,self.theoreticalSpectrum)
         print("INFO : %s saved!"%fileName)
+
+    def saveToFITS(self, fileName):
+        # Save Normed Spectrum, Continuum and Continuum Mask to Molecfit FITS file
+        result_of_fancy_FITS_parsing = True
+        if result_of_fancy_FITS_parsing:
+            sp.appendToFITS(fileName)
+        else:
+            sp.updateFITS(fileName)
 
     def plotSpectrum(self):
         if self.spectrum.wave is not None:
