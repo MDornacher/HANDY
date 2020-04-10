@@ -82,6 +82,8 @@ class NormSpectra(tkinter.Tk):
                               command=self.onSaveTheoreticalSpectrum)
         fileMenu2.add_command(label="Quick save",\
                               command=self.onQuickSave)
+        fileMenu2.add_command(label="Save to FITS file",\
+                              command=self.onFITSSave)
         #------------------------------------
         fileMenu3 = tkinter.Menu(menu)
         menu.add_cascade(label="Grids", underline=0, menu=fileMenu3)
@@ -259,6 +261,13 @@ class NormSpectra(tkinter.Tk):
         fileName = self.appLogic.spectrum.name.replace(".fits", ".cont")
         if fileName and self.appLogic.spectrum.wave is not None:
             self.appLogic.continuumRegionsLogic.saveRegionsFile(self.appLogic.spectrum, fileName)
+
+    def onFITSSave(self):
+        # Save Normed Spectrum, Continuum and Continuum Mask to Molecfit FITS file
+        # TODO: please build me
+        # TODO: update instead of append, otherwise a second click would append and append and append and append...
+        print("¯\_(ツ)_/¯")
+        pass
 
     def createControls(self):
         # Create several frames for grouping buttons
