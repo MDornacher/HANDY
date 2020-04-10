@@ -146,11 +146,19 @@ class normAppLogic:
 
     def saveToFITS(self, fileName):
         # Save Normed Spectrum, Continuum and Continuum Mask to Molecfit FITS file
-        result_of_fancy_FITS_parsing = True
-        if result_of_fancy_FITS_parsing:
-            sp.appendToFITS(fileName)
-        else:
-            sp.updateFITS(fileName)
+        hduIndex = 1  # for molecfit
+        with fits.open(fileName) as fits_file:
+            data_column_names = fits_file[hduIndex].data.names
+
+        column_names = ['norm', 'cont', 'cmask']
+        for column_name in column_names:
+            data_array = np.array()  # TODO: ༼ つ ◕_◕ ༽つ GIVE DATA
+            data_format = 'D'  # TODO: ༼ つ ◕_◕ ༽つ GIVE FORMAT
+
+            if column_name in data_column_names:
+                sp.updateFITS(fileName, column_name, data_format, data_array)
+            else:
+                sp.appendToFITS(fileName, column_name, data_format, data_array)
 
     def plotSpectrum(self):
         if self.spectrum.wave is not None:

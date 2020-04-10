@@ -6,7 +6,10 @@ DESCRIPTION
 
 definition of Spectrum class
 """
+import os
+
 import pandas as pd
+from astropy.io import fits
 
 def readSpectrum(filename,colWave=0,colFlux=1,skipRows=0):
     #print(filename)
@@ -27,11 +30,30 @@ def saveSpectrum(filename,spectrum):
             #f.write('# wave , flux\n')
             saveSpec.to_csv(f,columns=['wave','flux'],index=None,sep=' ',header=True)
 
-def appendToFITS(filename):
-    pass
+def appendToFITS(fileName, column_name, data_format, data_array):
+    fits_file = fits.open(fileName)
+    hduIndex = 1  # for molecfit
+    orig_table = fits_file[hduIndex].data
+    orig_cols = orig_table.columns
+    new_cols = fits.ColDefs([fits.Column(name=column_name, format=data_format, array=data_array)])
+    hdu = fits.BinTableHDU.from_columns(orig_cols + new_cols)
 
-def updateFITS(filename):
-    pass
+    fits_file[hduIndex] = hdu
+    outFileName = os.path.join(os.path.dirname(fileName), f'handy_{os.path.basename(fileName)}')
+    with open(outFileName, 'wb') as f:
+        fits_file.writeto(f, overwrite=False)
+    fits_file.close()
+
+def updateFITS(fileName, column_name, data_format, data_array):
+    fits_file = fits.open(fileName)
+    hduIndex = 1  # for molecfit
+    updated_col = fits.ColDefs(fits.Column(name=column_name, format=data_format, array=data_array))
+    fits_file[hduIndex].data[column_name] = updated_col  # TODO: this probably needs more testing
+
+    outFileName = os.path.join(os.path.dirname(fileName), f'handy_{os.path.basename(fileName)}')
+    with open(outFileName, 'wb') as f:
+        fits_file.writeto(f, overwrite=False)
+    fits_file.close()
 
 class Spectrum:
 
