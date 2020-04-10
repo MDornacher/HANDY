@@ -61,7 +61,7 @@ class NormSpectra(tkinter.Tk):
         menu = tkinter.Menu(self)
         self.config(menu=menu)
         #------------------------------------
-        fileMenu1 = tkinter.Menu(menu)
+        fileMenu1 = tkinter.Menu(menu, tearoff=0)
         menu.add_cascade(label="Open", underline=0, menu=fileMenu1)
         fileMenu1.add_command(label="Open spectrum", command=self.onOpenSpectrum)
         fileMenu1.add_command(label="Open continuum file",\
@@ -69,8 +69,9 @@ class NormSpectra(tkinter.Tk):
         fileMenu1.add_command(label="Open theoretical spectrum",\
                               command=self.onLoadTheoreticalSectrum)
         fileMenu1.add_command(label="Exit", underline=0, command=self.onExit)
+        fileMenu1.insert_separator(3)
         #------------------------------------
-        fileMenu2 = tkinter.Menu(menu)
+        fileMenu2 = tkinter.Menu(menu, tearoff=0)
         menu.add_cascade(label="Save", underline=0, menu=fileMenu2)
         fileMenu2.add_command(label="Save normed spectrum",\
                               command=self.onSaveNormedSpectrum)
@@ -84,8 +85,9 @@ class NormSpectra(tkinter.Tk):
                               command=self.onQuickSave)
         fileMenu2.add_command(label="Save to FITS file",\
                               command=self.onFITSSave)
+        fileMenu2.insert_separator(4)
         #------------------------------------
-        fileMenu3 = tkinter.Menu(menu)
+        fileMenu3 = tkinter.Menu(menu, tearoff=0)
         menu.add_cascade(label="Grids", underline=0, menu=fileMenu3)
         self.vlevel = tkinter.IntVar()
         lG = self.appLogic.gridDefinitions.listAvailibleGrids()
