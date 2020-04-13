@@ -266,12 +266,10 @@ class NormSpectra(tkinter.Tk):
 
     def onFITSSave(self):
         # Save Normed Spectrum, Continuum and Continuum Mask to Molecfit FITS file
-        # TODO: please build me
-        # TODO: update instead of append, otherwise a second click would append and append and append and append...
         print("¯\_(ツ)_/¯")
         fileName = self.appLogic.spectrum.name
-        if fileName and self.appLogic.spectrum.wave:
-            self.appLogic.saveNormedSpectrum(fileName)
+        if fileName and self.appLogic.spectrum.wave is not None:
+            self.appLogic.saveToFITS(fileName)
 
     def createControls(self):
         # Create several frames for grouping buttons

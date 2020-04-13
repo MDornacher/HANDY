@@ -41,7 +41,7 @@ def appendToFITS(fileName, column_name, data_format, data_array):
     fits_file[hduIndex] = hdu
     outFileName = os.path.join(os.path.dirname(fileName), f'handy_{os.path.basename(fileName)}')
     with open(outFileName, 'wb') as f:
-        fits_file.writeto(f, overwrite=False)
+        fits_file.writeto(f, overwrite=True)
     fits_file.close()
 
 def updateFITS(fileName, column_name, data_format, data_array):
@@ -52,7 +52,7 @@ def updateFITS(fileName, column_name, data_format, data_array):
 
     outFileName = os.path.join(os.path.dirname(fileName), f'handy_{os.path.basename(fileName)}')
     with open(outFileName, 'wb') as f:
-        fits_file.writeto(f, overwrite=False)
+        fits_file.writeto(f, overwrite=True)
     fits_file.close()
 
 class Spectrum:

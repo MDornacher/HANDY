@@ -144,17 +144,22 @@ class normAppLogic:
         sp.saveSpectrum(fileName,self.theoreticalSpectrum)
         print("INFO : %s saved!"%fileName)
 
-    def saveToFITS(self, fileName):
+    def saveToFITS(self,fileName):
         # Save Normed Spectrum, Continuum and Continuum Mask to Molecfit FITS file
         hduIndex = 1  # for molecfit
         with fits.open(fileName) as fits_file:
             data_column_names = fits_file[hduIndex].data.names
 
-        column_names = ['norm', 'cont', 'cmask']
-        for column_name in column_names:
-            data_array = np.array()  # TODO: ༼ つ ◕_◕ ༽つ GIVE DATA
-            data_format = 'D'  # TODO: ༼ つ ◕_◕ ༽つ GIVE FORMAT
+        data_arrays = {'norm': self.normedSpectrum.flux,
+                       'cont': self.continuum.flux,
+                       'cmask': np.zeros(self.spectrum.wave.size),
+                       'corder': np.zeros(self.spectrum.wave.size),
+                       }  # TODO: Do we need more? Is there a better solution for this?
 
+        for column_name, data_array in data_arrays.items():
+            data_format = 'D'  # TODO: ༼ つ ◕_◕ ༽つ GIVE FORMAT FROM ARRAY PLS
+            # TODO: each loop overwrites output of previous save
+            # TODO: the input fits file should be overwritten instead of creating a new one => handy_handy_handy_XXX.fits
             if column_name in data_column_names:
                 sp.updateFITS(fileName, column_name, data_format, data_array)
             else:
