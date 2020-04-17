@@ -76,34 +76,27 @@ class normAppLogic:
             http://archive.eso.org/cms/eso-data/help/1dspectra.html
             https://www.hs.uni-hamburg.de/DE/Ins/Per/Czesla/PyA/PyA/pyaslDoc/aslDoc/readFitsSpec.html
             """
-            if "_tpl" in fileName:  # TODO: this tpl is actually a typo and should be tac
-                fits_file = fits.open(fileName)
+            self.spectrum.wave = None
+            self.spectrum.flux = None
 
-                # HARD CODED
-                hduIndex = 1  # for molecfit
-                waveKey = "lambda"
-                fluxKey = "cflux"
+            # Search FITS data for Molecfit keywords
+            waveKey = "lambda"  # use orignal wavelength not the the molecfit corrected
+            fluxKey = "cflux"  # use telluric absorption corrected flux
+            dataKeys = [waveKey, fluxKey]
+            fitsFile = fits.open(fileName)
+            for hdu in fits_file:
+                if hdu.data is None or not hasattr(hdu.data, 'names'):
+                    continue
+                if all(name in hdu.data.names for name in dataKeys):
+                    self.spectrum.wave = hdu.data[waveKey]
+                    self.spectrum.flux = hdu.data[fluxKey]
+                    self.spectrum.flux = self.spectrum.wave * 1000  # micrometre to nanometre
+                    break
+            fits_file.close()
 
-                fitsData = fits_file[hduIndex].data
-                self.spectrum.wave = fitsData[waveKey]
-                self.spectrum.flux = fitsData[fluxKey]
-
-                self.spectrum.wave = self.spectrum.wave * 1000
-
-                # DYNAMIC GUI SELECTION
-                # hduIndex = self._ask_multiple_choice_question("Select HDU", range(len(fits_file)))
-                # fitsData = fits_file[hduIndex].data
-
-                # waveKey = self._ask_multiple_choice_question("Select wave key", fitsData.names)
-                # self.spectrum.wave = fitsData[waveKey]
-
-                # fluxKey = self._ask_multiple_choice_question("Select flux key", fitsData.names)
-                # self.spectrum.flux = fitsData[fluxKey]
-
-                fits_file.close()
-            else:
+            # If no Molecfit formated data is found, fall back to pyastronomy solution used in main version of HANDY
+            if self.spectrum.wave is None or self.spectrum.flux is None:
                 self.spectrum.wave, self.spectrum.flux = pyasl.read1dFitsSpec(fileName)
-                # self.spectrum.wave = self.spectrum.wave.byteswap().newbyteorder()
                 self.spectrum.flux = self.spectrum.flux.byteswap().newbyteorder()  # TODO PyAstronomy bug
             self.spectrum.name = fileName
         self.radialVelocity = 0.0
