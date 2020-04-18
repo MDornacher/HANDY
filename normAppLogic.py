@@ -84,7 +84,7 @@ class normAppLogic:
             fluxKey = "cflux"  # use telluric absorption corrected flux
             dataKeys = [waveKey, fluxKey]
             fitsFile = fits.open(fileName)
-            for hdu in fits_file:
+            for hdu in fitsFile:
                 if hdu.data is None or not hasattr(hdu.data, 'names'):
                     continue
                 if all(name in hdu.data.names for name in dataKeys):
@@ -92,7 +92,7 @@ class normAppLogic:
                     self.spectrum.flux = hdu.data[fluxKey]
                     self.spectrum.flux = self.spectrum.wave * 1000  # micrometre to nanometre
                     break
-            fits_file.close()
+            fitsFile.close()
 
             # If no Molecfit formated data is found, fall back to pyastronomy solution used in main version of HANDY
             if self.spectrum.wave is None or self.spectrum.flux is None:
@@ -140,23 +140,23 @@ class normAppLogic:
     def saveToFITS(self,fileName):
         # Save Normed Spectrum, Continuum and Continuum Mask to Molecfit FITS file
         hduIndex = 1  # for molecfit
-        with fits.open(fileName) as fits_file:
-            data_column_names = fits_file[hduIndex].data.names
+        with fits.open(fileName) as fitsFile:
+            dataColumnNames = fitsFile[hduIndex].data.names
 
-        data_arrays = {'norm': self.normedSpectrum.flux,
-                       'cont': self.continuum.flux,
-                       'cmask': np.zeros(self.spectrum.wave.size),
-                       'corder': np.zeros(self.spectrum.wave.size),
-                       }  # TODO: Do we need more? Is there a better solution for this?
+        dataArrays = {'norm': self.normedSpectrum.flux,
+                      'cont': self.continuum.flux,
+                      'cmask': np.zeros(self.spectrum.wave.size),  # self.continuumRegionsLogic.regions
+                      'corder': np.zeros(self.spectrum.wave.size),  # self.continuumRegionsLogic.orders
+                      }  # TODO: Do we need more? Is there a better solution for this?
 
-        for column_name, data_array in data_arrays.items():
-            data_format = 'D'  # TODO: ༼ つ ◕_◕ ༽つ GIVE FORMAT FROM ARRAY PLS
+        for columnName, dataArray in dataArrays.items():
+            dataFormat = 'D'  # TODO: ༼ つ ◕_◕ ༽つ GIVE FORMAT FROM ARRAY PLS
             # TODO: each loop overwrites output of previous save
             # TODO: the input fits file should be overwritten instead of creating a new one => handy_handy_handy_XXX.fits
-            if column_name in data_column_names:
-                sp.updateFITS(fileName, column_name, data_format, data_array)
+            if columnName in dataColumnNames:
+                sp.updateFITS(fileName, columnName, dataFormat, dataArray)
             else:
-                sp.appendToFITS(fileName, column_name, data_format, data_array)
+                sp.appendToFITS(fileName, columnName, dataFormat, dataArray)
 
     def plotSpectrum(self):
         if self.spectrum.wave is not None:

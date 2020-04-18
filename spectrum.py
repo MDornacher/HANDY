@@ -30,30 +30,30 @@ def saveSpectrum(filename,spectrum):
             #f.write('# wave , flux\n')
             saveSpec.to_csv(f,columns=['wave','flux'],index=None,sep=' ',header=True)
 
-def appendToFITS(fileName, column_name, data_format, data_array):
-    fits_file = fits.open(fileName)
+def appendToFITS(fileName, columnName, dataFormat, dataArray):
+    fitsFile = fits.open(fileName)
     hduIndex = 1  # for molecfit
-    orig_table = fits_file[hduIndex].data
-    orig_cols = orig_table.columns
-    new_cols = fits.ColDefs([fits.Column(name=column_name, format=data_format, array=data_array)])
-    hdu = fits.BinTableHDU.from_columns(orig_cols + new_cols)
+    origTable = fitsFile[hduIndex].data
+    origCols = origTable.columns
+    newCols = fits.ColDefs([fits.Column(name=columnName, format=dataFormat, array=dataArray)])
+    hdu = fits.BinTableHDU.from_columns(origCols + newCols)
 
-    fits_file[hduIndex] = hdu
+    fitsFile[hduIndex] = hdu
     outFileName = os.path.join(os.path.dirname(fileName), f'handy_{os.path.basename(fileName)}')
     with open(outFileName, 'wb') as f:
-        fits_file.writeto(f, overwrite=True)
-    fits_file.close()
+        fitsFile.writeto(f, overwrite=True)
+    fitsFile.close()
 
-def updateFITS(fileName, column_name, data_format, data_array):
-    fits_file = fits.open(fileName)
+def updateFITS(fileName, columnName, dataFormat, dataArray):
+    fitsFile = fits.open(fileName)
     hduIndex = 1  # for molecfit
-    updated_col = fits.ColDefs(fits.Column(name=column_name, format=data_format, array=data_array))
-    fits_file[hduIndex].data[column_name] = updated_col  # TODO: this probably needs more testing
+    updatedCol = fits.ColDefs(fits.Column(name=columnName, format=dataFormat, array=dataArray))
+    fitsFile[hduIndex].data[columnName] = updatedCol  # TODO: this probably needs more testing
 
     outFileName = os.path.join(os.path.dirname(fileName), f'handy_{os.path.basename(fileName)}')
     with open(outFileName, 'wb') as f:
-        fits_file.writeto(f, overwrite=True)
-    fits_file.close()
+        fitsFile.writeto(f, overwrite=True)
+    fitsFile.close()
 
 class Spectrum:
 
