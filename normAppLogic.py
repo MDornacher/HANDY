@@ -92,7 +92,7 @@ class normAppLogic:
                 if all(name in hdu.data.names for name in dataKeys):
                     self.spectrum.wave = hdu.data[waveKey]
                     self.spectrum.flux = hdu.data[fluxKey]
-                    self.spectrum.flux = self.spectrum.wave * 1000  # micrometre to nanometre
+                    self.spectrum.flux = self.spectrum.flux * 1000  # micrometre to nanometre
                     break
             fitsFile.close()
 
