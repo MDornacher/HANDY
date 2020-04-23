@@ -18,6 +18,8 @@ import glob
 
 import normAppLogic
 
+from molecfitUtils import loadDIBs
+
 class NormSpectra(tkinter.Tk):
 
 
@@ -339,6 +341,11 @@ class NormSpectra(tkinter.Tk):
                                     text = "Radial velocity",\
                                     command = self.onRadialVelocity)
         self.bttn33.grid(row = 2, column = 2, sticky = WENS)
+
+        self.bttn43 = tkinter.Button(self.controlFrameA,\
+                                    text = "Load DIBS",\
+                                    command = self.onLoadDIBS)
+        self.bttn43.grid(row = 2, column = 2, sticky = WENS)
         #=======================================================================
 
         self.backgroundColor = self.bttn11.cget("bg")
@@ -608,6 +615,16 @@ class NormSpectra(tkinter.Tk):
         self.appLogic.normSpectrum()
         if self.appLogic.spectrum.wave is not None:
             self.updateNormedPlot()
+            self.canvas.draw()
+
+    def onLoadDIBS(self):
+        dibs = loadDIBs()
+        self.updateNormedPlot()  # TODO: the resetting does not work yet
+        if self.appLogic.normedSpectrum.wave is not None:  # TODO: wave is sometimes empty => min/max wont work
+            for dib in dibs:
+                if min(self.appLogic.normedSpectrum.wave) <= dib <= max(self.appLogic.normedSpectrum.wave):
+                    self.ax1.axvline(x=dib, color='green', alpha=0.5)
+                    self.ax2.axvline(x=dib, color='green', alpha=0.5)
             self.canvas.draw()
 
     def onSetAutoUpdateNormalization(self):
