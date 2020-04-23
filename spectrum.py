@@ -30,7 +30,8 @@ def saveSpectrum(filename,spectrum):
             #f.write('# wave , flux\n')
             saveSpec.to_csv(f,columns=['wave','flux'],index=None,sep=' ',header=True)
 
-def appendToFITS(fileName, columnName, dataFormat, dataArray):
+def appendToFITSdata(fileName, columnName, dataFormat, dataArray):
+    # TODO: the whole fits open/close thing is a bit wonky, probably better to use two with open
     fitsFile = fits.open(fileName)
     hduIndex = 1  # for molecfit
     origTable = fitsFile[hduIndex].data
@@ -44,7 +45,8 @@ def appendToFITS(fileName, columnName, dataFormat, dataArray):
         fitsFile.writeto(f, overwrite=True)
     fitsFile.close()
 
-def updateFITS(fileName, columnName, dataFormat, dataArray):
+def updateFITSdata(fileName, columnName, dataFormat, dataArray):
+    # TODO: the whole fits open/close thing is a bit wonky, probably better to use two with open
     fitsFile = fits.open(fileName)
     hduIndex = 1  # for molecfit
     updatedCol = fits.ColDefs(fits.Column(name=columnName, format=dataFormat, array=dataArray))
@@ -54,6 +56,9 @@ def updateFITS(fileName, columnName, dataFormat, dataArray):
     with open(outFileName, 'wb') as f:
         fitsFile.writeto(f, overwrite=True)
     fitsFile.close()
+
+def updateFITSheader(fileName, cpolys):
+    pass
 
 class Spectrum:
 

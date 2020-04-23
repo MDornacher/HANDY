@@ -15,6 +15,8 @@ import radialVelocity
 import specInterface
 import gridDefinitionsRead
 
+from molecfitUtils import forward_fill_ifsame, regions2mask
+
 import tkinter
 
 """
@@ -143,20 +145,32 @@ class normAppLogic:
         with fits.open(fileName) as fitsFile:
             dataColumnNames = fitsFile[hduIndex].data.names
 
-        dataArrays = {'norm': self.normedSpectrum.flux,
-                      'cont': self.continuum.flux,
-                      'cmask': np.zeros(self.spectrum.wave.size),  # self.continuumRegionsLogic.regions
-                      'corder': np.zeros(self.spectrum.wave.size),  # self.continuumRegionsLogic.orders
-                      }  # TODO: Do we need more? Is there a better solution for this?
+        # Prepare continuum mask and continuum id
+        cmask, cid = regions2mask(self.spectrum.wave, self.continuumRegionsLogic.regions)
+        cid = forward_fill_ifsame(cid)
 
+        # Prepare polynomial coefficients
+        cpolys = {"CID": ["a0wert", "a1wert", "a2wert"]}
+
+        dataArrays = {"norm": self.normedSpectrum.flux,
+                      "cont": self.continuum.flux,
+                      "cmask": cmask,
+                      "cid": cid,
+                      }  # TODO: Is there a better solution for this?
+
+        # Update FITS data
         for columnName, dataArray in dataArrays.items():
-            dataFormat = 'D'  # TODO: ༼ つ ◕_◕ ༽つ GIVE FORMAT FROM ARRAY PLS
-            # TODO: each loop overwrites output of previous save
+            dataFormat = "D"  # TODO: ༼ つ ◕_◕ ༽つ GIVE FORMAT FROM ARRAY PLS
+            # TODO: each loop overwrites output of previous save, why does this happen?
             # TODO: the input fits file should be overwritten instead of creating a new one => handy_handy_handy_XXX.fits
             if columnName in dataColumnNames:
-                sp.updateFITS(fileName, columnName, dataFormat, dataArray)
+                sp.updateFITSdata(fileName, columnName, dataFormat, dataArray)
             else:
-                sp.appendToFITS(fileName, columnName, dataFormat, dataArray)
+                sp.appendToFITSdata(fileName, columnName, dataFormat, dataArray)
+
+        # Update FITS header
+        sp.updateFITSheader(fileName, cpolys)
+
 
     def plotSpectrum(self):
         if self.spectrum.wave is not None:
