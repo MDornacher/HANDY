@@ -163,8 +163,7 @@ class normAppLogic:
         # since the fit results are not saved we need to recreate them
         cpolys = []
         for id_count, degree in enumerate(self.continuumRegionsLogic.orders, 1):
-            mask = (cid == id_count) & (cmask == 1)
-            # TODO: not sure if masking is working correctly
+            mask = (cid != id_count) & (cmask != 1)
             coefficients = np.polynomial.chebyshev.chebfit(np.ma.masked_array(self.spectrum.wave, mask=mask),
                                                            np.ma.masked_array(self.spectrum.flux, mask=mask),
                                                            degree)
