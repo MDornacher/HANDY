@@ -18,7 +18,7 @@ import glob
 
 import normAppLogic
 
-from molecfitUtils import loadDIBs
+import molecfitUtils as mu
 
 class NormSpectra(tkinter.Tk):
 
@@ -256,20 +256,24 @@ class NormSpectra(tkinter.Tk):
 
     def onQuickSave(self):
         # Save Normed Spectrum
-        fileName = self.appLogic.spectrum.name.replace(".fits", ".norm")
+        fileName = os.path.normpath(self.appLogic.spectrum.name).replace(".fits", ".norm")  # TODO: How is this path still broken? "¯\_(ツ)_/¯"
         if fileName and self.appLogic.spectrum.wave is not None:
             # self.appLogic.saveNormedSpectrum(fileName,self.ifSaveCorrectedvrad.get())
             self.appLogic.saveNormedSpectrum(fileName,False)
 
-        #  Save Continuum
-        fileName = self.appLogic.spectrum.name.replace(".fits", ".cont")
+        # Save Continuum
+        fileName = os.path.normpath(self.appLogic.spectrum.name).replace(".fits", ".cont")  # TODO: How is this path still broken? "¯\_(ツ)_/¯"
         if fileName and self.appLogic.spectrum.wave is not None:
             self.appLogic.continuumRegionsLogic.saveRegionsFile(self.appLogic.spectrum, fileName)
 
+        # Save Normed Spectrum, Continuum and Continuum Mask to Molecfit FITS file
+        fileName = os.path.normpath(self.appLogic.spectrum.name)  # TODO: How is this path still broken? "¯\_(ツ)_/¯"
+        if fileName and self.appLogic.spectrum.wave is not None:
+            self.appLogic.saveToFITS(fileName)
+
     def onFITSSave(self):
         # Save Normed Spectrum, Continuum and Continuum Mask to Molecfit FITS file
-        print("¯\_(ツ)_/¯")
-        fileName = self.appLogic.spectrum.name
+        fileName = os.path.normpath(self.appLogic.spectrum.name)  # TODO: How is this path still broken? "¯\_(ツ)_/¯"
         if fileName and self.appLogic.spectrum.wave is not None:
             self.appLogic.saveToFITS(fileName)
 
@@ -618,7 +622,7 @@ class NormSpectra(tkinter.Tk):
             self.canvas.draw()
 
     def onLoadDIBS(self):
-        dibs = loadDIBs()
+        dibs = mu.loadDIBs()
         self.updateNormedPlot()
         if self.appLogic.spectrum.wave is not None:
             for dib in dibs[(dibs >= self.appLogic.spectrum.wave.min()) & (dibs <= self.appLogic.spectrum.wave.max())]:

@@ -4,6 +4,7 @@ import os
 import numpy as np
 import pandas as pd
 import copy
+import shutil
 from scipy.interpolate import Akima1DInterpolator
 import matplotlib.pyplot as plt
 from PyAstronomy import pyasl
@@ -15,7 +16,7 @@ import radialVelocity
 import specInterface
 import gridDefinitionsRead
 
-from molecfitUtils import forward_fill_ifsame, regions2mask
+import molecfitUtils as mu
 
 import tkinter
 
@@ -141,35 +142,43 @@ class normAppLogic:
 
     def saveToFITS(self,fileName):
         # Save Normed Spectrum, Continuum and Continuum Mask to Molecfit FITS file
-        hduIndex = 1  # for molecfit
-        with fits.open(fileName) as fitsFile:
+        hduIndex = 1  # for molecfit  # TODO: maybe this can be improved like the read fits method
+
+        fileNameRoot, fileNameExt = os.path.splitext(os.path.basename(fileName))
+        fileNameOut = os.path.join(os.path.dirname(fileName), f'{fileNameRoot}_handy{fileNameExt}')
+
+        if os.path.exists(fileNameOut):
+            fitsFile = fits.open(fileNameOut, memmap=False)
             dataColumnNames = fitsFile[hduIndex].data.names
+            fitsFile.close()
+        else:
+            shutil.copy(fileName, fileNameOut)
+            dataColumnNames = []
 
         # Prepare continuum mask and continuum id
-        cmask, cid = regions2mask(self.spectrum.wave, self.continuumRegionsLogic.regions)
-        cid = forward_fill_ifsame(cid)
+        cmask, cid = mu.regions2mask(self.spectrum.wave, self.continuumRegionsLogic.regions)
+        cid = mu.forward_fill_ifsame(cid)
 
         # Prepare polynomial coefficients
-        cpolys = {"CID": ["a0wert", "a1wert", "a2wert"]}
+        cpolys = [["a0wert", "a1wert", "a2wert"]]
 
         dataArrays = {"norm": self.normedSpectrum.flux,
                       "cont": self.continuum.flux,
                       "cmask": cmask,
                       "cid": cid,
+                      "spoints": np.zeros(len(self.normedSpectrum.flux))  # TODO: Special points for things like balmer jump
                       }  # TODO: Is there a better solution for this?
 
         # Update FITS data
         for columnName, dataArray in dataArrays.items():
             dataFormat = "D"  # TODO: ༼ つ ◕_◕ ༽つ GIVE FORMAT FROM ARRAY PLS
-            # TODO: each loop overwrites output of previous save, why does this happen?
-            # TODO: the input fits file should be overwritten instead of creating a new one => handy_handy_handy_XXX.fits
             if columnName in dataColumnNames:
-                sp.updateFITSdata(fileName, columnName, dataFormat, dataArray)
+                mu.updateFITSdata(fileNameOut, columnName, dataFormat, dataArray)
             else:
-                sp.appendToFITSdata(fileName, columnName, dataFormat, dataArray)
+                mu.appendToFITSdata(fileNameOut, columnName, dataFormat, dataArray)
 
         # Update FITS header
-        sp.updateFITSheader(fileName, cpolys)
+        mu.updateFITSheader(fileNameOut, cpolys)
 
 
     def plotSpectrum(self):
