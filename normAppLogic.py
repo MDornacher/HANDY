@@ -280,7 +280,7 @@ class normAppLogic:
         else: #elif fitType == 2:
             fit = np.polynomial.legendre.Legendre.fit(xIn,yIn, degree)
             yOut = np.polynomial.legendre.legval(xOut,fit)
-        return yOut, fit
+        return yOut
 
     def applyRadialVelocity(self,radVel):
         self.spectrum.wave, self.spectrum.flux = self.radialVelocityEstimator.applyRadialVelocity(\
