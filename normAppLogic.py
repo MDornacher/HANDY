@@ -160,7 +160,15 @@ class normAppLogic:
         cid = mu.forward_fill_ifsame(cid)
 
         # Prepare polynomial coefficients
-        cpolys = [["a0wert", "a1wert", "a2wert"]]
+        # since the fit results are not saved we need to recreate them
+        cpolys = []
+        for id_count, degree in enumerate(self.continuumRegionsLogic.orders, 1):
+            mask = (cid == id_count) & (cmask == 1)
+            # TODO: not sure if masking is working correctly
+            coefficients = np.polynomial.chebyshev.chebfit(np.ma.masked_array(self.spectrum.wave, mask=mask),
+                                                           np.ma.masked_array(self.spectrum.flux, mask=mask),
+                                                           degree)
+            cpolys.append(coefficients)
 
         dataArrays = {"norm": self.normedSpectrum.flux,
                       "cont": self.continuum.flux,
@@ -273,7 +281,7 @@ class normAppLogic:
         else: #elif fitType == 2:
             fit = np.polynomial.legendre.Legendre.fit(xIn,yIn, degree)
             yOut = np.polynomial.legendre.legval(xOut,fit)
-        return yOut
+        return yOut, fit
 
     def applyRadialVelocity(self,radVel):
         self.spectrum.wave, self.spectrum.flux = self.radialVelocityEstimator.applyRadialVelocity(\
