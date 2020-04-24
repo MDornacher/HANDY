@@ -621,10 +621,9 @@ class NormSpectra(tkinter.Tk):
         dibs = loadDIBs()
         self.updateNormedPlot()
         if self.appLogic.spectrum.wave is not None:
-            for dib in dibs:
-                if min(self.appLogic.spectrum.wave) <= dib <= max(self.appLogic.spectrum.wave):
-                    self.ax1.axvline(x=dib, color='green', alpha=0.5)
-                    # self.ax2.axvline(x=dib, color='green', alpha=0.5) # TODO: the resetting does not work yet
+            for dib in dibs[(dibs >= self.appLogic.spectrum.wave.min()) & (dibs <= self.appLogic.spectrum.wave.max())]:
+                self.ax1.axvline(x=dib, color='green', alpha=0.5)
+                # self.ax2.axvline(x=dib, color='green', alpha=0.5) # TODO: the resetting does not work yet
             self.canvas.draw()
 
     def onSetAutoUpdateNormalization(self):

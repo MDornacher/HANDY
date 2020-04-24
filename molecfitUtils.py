@@ -41,4 +41,4 @@ def loadDIBs():
     with open("dibs") as f:
         data = f.read().splitlines()
     data = [float(i) * 1000 for i in data[2:]]
-    return data
+    return np.array(data)
