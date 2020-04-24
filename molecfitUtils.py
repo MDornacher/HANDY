@@ -93,13 +93,12 @@ def updateFITSheader(fileNameOut, cpolys):
 
         # Remove header old header entries
         if "NPOLY" in header:
-            header = header[header.index("NPOLY")]
-        fitsFile[hduIndex].header.append(("NPOLY", len(cpolys), "Number of subsequent polynomials used for norming"))
+            header = header[:header.index("NPOLY")]
+        header.append(("NPOLY", len(cpolys), "Number of subsequent polynomials"))
 
         for p_count, coefficients in enumerate(cpolys, 1):
             entry_name = f"P{p_count:03}"
-            fitsFile[hduIndex].header[entry_name] = len(coefficients)-1
-            fitsFile[hduIndex].header[entry_name].comment = "Polynomial ID with order"
+            header.append((entry_name, len(coefficients)-1, "Order of chebyshev polynomial"))
 
             for c_count, coefficient in enumerate(coefficients):
-                fitsFile[hduIndex].header[f"{entry_name}_{c_count}"] = coefficient
+                header.append((f"{entry_name}_{c_count}", coefficient, f"{c_count} Chebyshev coefficient"))

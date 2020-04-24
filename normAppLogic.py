@@ -155,15 +155,15 @@ class normAppLogic:
             shutil.copy(fileName, fileNameOut)
             dataColumnNames = []
 
-        # Prepare continuum mask and continuum id
-        cmask, cid = mu.regions2mask(self.spectrum.wave, self.continuumRegionsLogic.regions)
-        cid = mu.forward_fill_ifsame(cid)
+        # Prepare continuum mask and polynomial mask
+        cmask, pmask = mu.regions2mask(self.spectrum.wave, self.continuumRegionsLogic.regions)
+        pmask = mu.forward_fill_ifsame(pmask)
 
         # Prepare polynomial coefficients
         # since the fit results are not saved we need to recreate them
         cpolys = []
         for id_count, degree in enumerate(self.continuumRegionsLogic.orders, 1):
-            mask = (cid != id_count) & (cmask != 1)
+            mask = (pmask != id_count) & (cmask != 1)
             coefficients = np.polynomial.chebyshev.chebfit(np.ma.masked_array(self.spectrum.wave, mask=mask),
                                                            np.ma.masked_array(self.spectrum.flux, mask=mask),
                                                            degree)
@@ -172,7 +172,7 @@ class normAppLogic:
         dataArrays = {"norm": self.normedSpectrum.flux,
                       "cont": self.continuum.flux,
                       "cmask": cmask,
-                      "cid": cid,
+                      "pmask": pmask,
                       "spoints": np.zeros(len(self.normedSpectrum.flux))  # TODO: Special points for things like balmer jump
                       }  # TODO: Is there a better solution for this?
 
