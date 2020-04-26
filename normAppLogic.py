@@ -173,7 +173,7 @@ class normAppLogic:
                       "cont": self.continuum.flux,
                       "cmask": cmask,
                       "pmask": pmask,
-                      "spoints": np.zeros(len(self.normedSpectrum.flux))  # TODO: Special points for things like balmer jump
+                      # "spoints": np.zeros(len(self.normedSpectrum.flux))  # TODO: Special points for things like balmer jump
                       }  # TODO: Is there a better solution for this?
 
         # Update FITS data
