@@ -174,7 +174,6 @@ class NormSpectra(tkinter.Tk):
         contRegionsWaveAndFlux = self.appLogic.getContinuumRangesForPlot()
         self.replotUpdatedRanges(contRegionsWaveAndFlux,ifAutoscale=True)
 
-
     def onLoadContinuum(self, extContinuum=None):
         if not extContinuum:
             dirname = os.getcwd()
@@ -771,7 +770,7 @@ class NormSpectra(tkinter.Tk):
         if event.key == 's':
             self.onQuickSave()
         key_press_handler(event, self.canvas, self.toolbar)
-        print("TODO: add some shortcuts to buttons")
+        # TODO: add some shortcuts to buttons"
 
     def onPlotClick(self,event):
         if self.toolbar.mode!='':
