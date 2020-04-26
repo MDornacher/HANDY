@@ -309,7 +309,7 @@ class RegionLogic:
                     ifReadPoints=False
                     ifReadOrders=True
                     continue
-                if line.startswith('#') or line.startswith(' '):
+                if line.startswith('#'): # TODO: this needs a bit more testing but works fine so far without 'or line.startswith(' ')':
                     continue
                 elements=str.split(line)
                 if ifReadPoints:
