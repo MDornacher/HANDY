@@ -142,14 +142,28 @@ class normAppLogic:
 
     def saveToFITS(self,fileName):
         # Save Normed Spectrum, Continuum and Continuum Mask to Molecfit FITS file
-        hduIndex = 1  # for molecfit  # TODO: maybe this can be improved like the read fits method
-
         fileNameRoot, fileNameExt = os.path.splitext(os.path.basename(fileName))
         fileNameOut = os.path.join(os.path.dirname(fileName), f'{fileNameRoot}_handy{fileNameExt}')
 
+        # Find the right HDU index (if possible) and save the names of the data columns
+        hduIndex = None
         if os.path.exists(fileNameOut):
+            # Search FITS data for Molecfit or HANDY keywords
+            dataKeys = ["lambda", "flux", "cflux", "norm", "cont", "cmask", "pmask"]
+            tmpIndex = 0
+
             fitsFile = fits.open(fileNameOut, memmap=False)
-            dataColumnNames = fitsFile[hduIndex].data.names
+            for hdu in fitsFile:
+                if hdu.data is None or not hasattr(hdu.data, 'names'):
+                    continue
+                if any(name in hdu.data.names for name in dataKeys):
+                    hduIndex = tmpIndex
+                    dataColumnNames = fitsFile[hduIndex].data.names
+                    break
+                tmpIndex += 1
+
+            if not hduIndex:
+                dataColumnNames = []
             fitsFile.close()
         else:
             shutil.copy(fileName, fileNameOut)
@@ -169,7 +183,9 @@ class normAppLogic:
                                                            degree)
             cpolys.append(coefficients)
 
-        dataArrays = {"norm": self.normedSpectrum.flux,
+        dataArrays = {"lambda": self.spectrum.wave,
+                      "flux": self.spectrum.flux,
+                      "norm": self.normedSpectrum.flux,
                       "cont": self.continuum.flux,
                       "cmask": cmask,
                       "pmask": pmask,
@@ -180,12 +196,18 @@ class normAppLogic:
         for columnName, dataArray in dataArrays.items():
             dataFormat = "D"  # TODO: ༼ つ ◕_◕ ༽つ GIVE FORMAT FROM ARRAY PLS
             if columnName in dataColumnNames:
-                mu.updateFITSdata(fileNameOut, columnName, dataFormat, dataArray)
+                # Again, very ugly but prevents updating of wavelength and flux
+                # which is only there because of non-molecfit FITS files
+                if columnName not in ["lambda", "flux"]:
+                    mu.updateFITSdata(fileNameOut, columnName, dataFormat, dataArray, hduIndex)
+            elif hduIndex:
+                mu.appendToFITSdata(fileNameOut, columnName, dataFormat, dataArray, hduIndex)
             else:
-                mu.appendToFITSdata(fileNameOut, columnName, dataFormat, dataArray)
+                # This should only be necessary once
+                hduIndex = mu.newFITSdata(fileNameOut, columnName, dataFormat, dataArray)
 
         # Update FITS header
-        mu.updateFITSheader(fileNameOut, cpolys)
+        mu.updateFITSheader(fileNameOut, cpolys, hduIndex)
 
 
     def plotSpectrum(self):

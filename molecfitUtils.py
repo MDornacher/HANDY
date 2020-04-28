@@ -48,13 +48,12 @@ def loadDIBs():
     return np.array(data)
 
 
-def appendToFITSdata(fileNameOut, columnName, dataFormat, dataArray):
+def appendToFITSdata(fileNameOut, columnName, dataFormat, dataArray, hduIndex):
     # Wow is this thing ugly...
     # All this workaround is necessary because the files opened with astropy fits are still open when closed(?!)
     # https://github.com/astropy/astropy/issues/7404
     with open(fileNameOut, 'rb') as f_in:
         fitsFile = fits.open(f_in, memmap=False)
-        hduIndex = 1  # for molecfit
 
         origTable = fitsFile[hduIndex].data
         origCols = origTable.columns
@@ -70,11 +69,10 @@ def appendToFITSdata(fileNameOut, columnName, dataFormat, dataArray):
     shutil.move('tmp.fits', fileNameOut)
 
 
-def updateFITSdata(fileNameOut, columnName, dataFormat, dataArray):
+def updateFITSdata(fileNameOut, columnName, dataFormat, dataArray, hduIndex):
     # Same story as with appendToFITSdata()
     with open(fileNameOut, 'rb') as f_in:
         fitsFile = fits.open(f_in, memmap=False)
-        hduIndex = 1  # for molecfit
 
         fitsFile[hduIndex].data[columnName] = dataArray
 
@@ -86,9 +84,28 @@ def updateFITSdata(fileNameOut, columnName, dataFormat, dataArray):
     fitsFile.close()
 
 
-def updateFITSheader(fileNameOut, cpolys):
+def newFITSdata(fileNameOut, columnName, dataFormat, dataArray):
+    # Wow is this thing ugly...
+    # All this workaround is necessary because the files opened with astropy fits are still open when closed(?!)
+    # https://github.com/astropy/astropy/issues/7404
+    with open(fileNameOut, 'rb') as f_in:
+        fitsFile = fits.open(f_in, memmap=False)
+        hduIndex = len(fitsFile)
+
+        newCols = fits.ColDefs([fits.Column(name=columnName, format=dataFormat, array=dataArray)])
+        hdu = fits.BinTableHDU.from_columns(newCols)
+        fitsFile.append(hdu)
+
+        with open('tmp.fits', 'wb') as f_out:
+            fitsFile.writeto(f_out, overwrite=True)
+
+    os.remove(fileNameOut)
+    shutil.move('tmp.fits', fileNameOut)
+    return hduIndex
+
+
+def updateFITSheader(fileNameOut, cpolys, hduIndex):
     with fits.open(fileNameOut, mode='update') as fitsFile:
-        hduIndex = 1  # for molecfit
         header = fitsFile[hduIndex].header
 
         # Remove header old header entries
