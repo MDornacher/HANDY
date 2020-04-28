@@ -384,7 +384,8 @@ class RegionLogic:
         self.lastActiveRegionNumber = []
 
     def getOrderOfActiveRegion(self):
-        if self.orders:
+        return self.defaultOrder
+        if self.orders and len(self.orders) < self.activeRegionNumber:
             return self.orders[self.activeRegionNumber]
         else:
             return self.defaultOrder
