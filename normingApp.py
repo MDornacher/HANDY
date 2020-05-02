@@ -148,7 +148,7 @@ class NormSpectra(tkinter.Tk):
         ftypes = [('All files', '*'),('FITS files', '*fits'),('Plain text', '*.txt *.dat')]
         answer = filedialog.askopenfilenames(title="Open spectrum...", initialdir=dirname, filetypes=ftypes)
         if answer:
-            self.fileList = answer
+            self.fileList = [os.path.normpath(p) for p in answer]
             fileName = self.fileList[0]
             self.wm_title(os.path.basename(fileName))
             skipRows=1
@@ -162,6 +162,9 @@ class NormSpectra(tkinter.Tk):
             extContinuum = fileName.replace(".fits", ".cont")
             if os.path.exists(extContinuum):
                 self.onLoadContinuum(extContinuum=extContinuum)
+            else:
+                self.appLogic.continuumRegionsLogic.orders = []
+                self.appLogic.continuumRegionsLogic.regions = []
 
 
         self.appLogic.continuumRegionsLogic.updateRegionsAndPoints(self.appLogic.spectrum)
@@ -257,25 +260,26 @@ class NormSpectra(tkinter.Tk):
             self.appLogic.saveTheoreticalSpectrum(fileName)
 
     def onQuickSave(self):
+        # TODO: spectrum.wave is not always the right question; should be region, continuum, etc.
         # Save Normed Spectrum
-        fileName = os.path.normpath(self.appLogic.spectrum.name).replace(".fits", ".norm")  # TODO: How is this path still broken? "¯\_(ツ)_/¯"
+        fileName = os.path.normpath(self.appLogic.spectrum.name).replace(".fits", ".norm")
         if fileName and self.appLogic.spectrum.wave is not None:
             # self.appLogic.saveNormedSpectrum(fileName,self.ifSaveCorrectedvrad.get())
             self.appLogic.saveNormedSpectrum(fileName,False)
 
         # Save Continuum
-        fileName = os.path.normpath(self.appLogic.spectrum.name).replace(".fits", ".cont")  # TODO: How is this path still broken? "¯\_(ツ)_/¯"
+        fileName = os.path.normpath(self.appLogic.spectrum.name).replace(".fits", ".cont")
         if fileName and self.appLogic.spectrum.wave is not None:
             self.appLogic.continuumRegionsLogic.saveRegionsFile(self.appLogic.spectrum, fileName)
 
         # Save Normed Spectrum, Continuum and Continuum Mask to Molecfit FITS file
-        fileName = os.path.normpath(self.appLogic.spectrum.name)  # TODO: How is this path still broken? "¯\_(ツ)_/¯"
+        fileName = os.path.normpath(self.appLogic.spectrum.name)
         if fileName and self.appLogic.spectrum.wave is not None:
             self.appLogic.saveToFITS(fileName)
 
     def onFITSSave(self):
         # Save Normed Spectrum, Continuum and Continuum Mask to Molecfit FITS file
-        fileName = os.path.normpath(self.appLogic.spectrum.name)  # TODO: How is this path still broken? "¯\_(ツ)_/¯"
+        fileName = os.path.normpath(self.appLogic.spectrum.name)
         if fileName and self.appLogic.spectrum.wave is not None:
             self.appLogic.saveToFITS(fileName)
 
@@ -586,7 +590,7 @@ class NormSpectra(tkinter.Tk):
             return
         currentIndex = self.fileList.index(self.appLogic.spectrum.name)
         nextIndex = (currentIndex + 1) % len(self.fileList)
-        fileName = self.fileList[nextIndex]
+        fileName = os.path.normpath(self.fileList[nextIndex])
         self.wm_title(os.path.basename(fileName))
         skipRows = 1
         colWave = 0
@@ -599,6 +603,9 @@ class NormSpectra(tkinter.Tk):
         extContinuum = fileName.replace(".fits", ".cont")
         if os.path.exists(extContinuum):
             self.onLoadContinuum(extContinuum=extContinuum)
+        else:
+            self.appLogic.continuumRegionsLogic.orders = []
+            self.appLogic.continuumRegionsLogic.regions = []
 
         self.appLogic.continuumRegionsLogic.updateRegionsAndPoints(self.appLogic.spectrum)
         self.appLogic.continuum.wave = []

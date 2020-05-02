@@ -108,7 +108,7 @@ class normAppLogic:
 
     def saveSpectrum(self,fileName):
         sp.saveSpectrum(fileName,self.spectrum)
-        print("INFO : %s saved!"%fileName)
+        print(f"SAVED: {fileName}")
 
     def readTheoreticalSpectrum(self,fileName,colWave=0,colFlux=1,skipRows=0):
         self.theoreticalSpectrum = sp.readSpectrum(fileName,\
@@ -134,11 +134,11 @@ class normAppLogic:
         else:
             print("Saving corrected for radial velocity.")
         sp.saveSpectrum(fileName,saveSpectrum)
-        print("INFO : %s saved!"%fileName)
+        print(f"SAVED:{fileName}")
 
     def saveTheoreticalSpectrum(self,fileName):
         sp.saveSpectrum(fileName,self.theoreticalSpectrum)
-        print("INFO : %s saved!"%fileName)
+        print(f"SAVED: {fileName}")
 
     def saveToFITS(self,fileName):
         # Save Normed Spectrum, Continuum and Continuum Mask to Molecfit FITS file
@@ -155,6 +155,7 @@ class normAppLogic:
             fitsFile = fits.open(fileNameOut, memmap=False)
             for hdu in fitsFile:
                 if hdu.data is None or not hasattr(hdu.data, 'names'):
+                    tmpIndex += 1
                     continue
                 if any(name in hdu.data.names for name in dataKeys):
                     hduIndex = tmpIndex
@@ -208,6 +209,7 @@ class normAppLogic:
 
         # Update FITS header
         mu.updateFITSheader(fileNameOut, cpolys, hduIndex)
+        print(f"SAVED: {fileNameOut}")
 
 
     def plotSpectrum(self):
