@@ -144,6 +144,7 @@ class NormSpectra(tkinter.Tk):
             self.meScale['from_'] ,self.meScale['to'] = minim, maxim
 
     def onOpenSpectrum(self):
+        self.bttn42.configure(bg="red")
         dirname = os.getcwd()
         ftypes = [('All files', '*'),('FITS files', '*fits'),('Plain text', '*.txt *.dat')]
         answer = filedialog.askopenfilenames(title="Open spectrum...", initialdir=dirname, filetypes=ftypes)
@@ -168,17 +169,18 @@ class NormSpectra(tkinter.Tk):
 
 
         self.appLogic.continuumRegionsLogic.updateRegionsAndPoints(self.appLogic.spectrum)
-        self.appLogic.continuum.wave = []
-        self.appLogic.continuum.flux = []
+        # self.appLogic.continuum.wave = []
+        # self.appLogic.continuum.flux = []
         if self.ifAutoUpdateNormalization:
             self.appLogic.normSpectrum()
-        self.onAlreadyNormed(reprint = False)
+        # self.onAlreadyNormed(reprint = False)
 
         contRegionsWaveAndFlux = self.appLogic.getContinuumRangesForPlot()
         self.replotUpdatedRanges(contRegionsWaveAndFlux,ifAutoscale=True)
 
         # TODO: stupid fix to reset key press events
         self.canvas.mpl_connect('key_press_event', self.onKeyPress)
+        self.bttn42.configure(bg="green")
 
     def onLoadContinuum(self, extContinuum=None):
         if not extContinuum:
@@ -260,6 +262,7 @@ class NormSpectra(tkinter.Tk):
             self.appLogic.saveTheoreticalSpectrum(fileName)
 
     def onQuickSave(self):
+        self.bttn42.configure(bg="red")
         # TODO: spectrum.wave is not always the right question; should be region, continuum, etc.
         # Save Normed Spectrum
         fileName = os.path.normpath(self.appLogic.spectrum.name).replace(".fits", ".norm")
@@ -276,6 +279,7 @@ class NormSpectra(tkinter.Tk):
         fileName = os.path.normpath(self.appLogic.spectrum.name)
         if fileName and self.appLogic.spectrum.wave is not None:
             self.appLogic.saveToFITS(fileName)
+        self.bttn42.configure(bg="green")
 
     def onFITSSave(self):
         # Save Normed Spectrum, Continuum and Continuum Mask to Molecfit FITS file
@@ -334,8 +338,12 @@ class NormSpectra(tkinter.Tk):
                                     command = self.onAutoFitSpecialPoints)
         self.bttn32.grid(row = 2, column = 1, sticky = WENS)
 
-        self.bttn42 = tkinter.Label(self.controlFrameA, text=" <--- Adjust order")
+        # self.bttn42 = tkinter.Label(self.controlFrameA, text=" <--- Adjust order")
+        # self.bttn42.grid(row = 3, column = 1, sticky = WENS)
+        self.bttn42 = tkinter.Button(self.controlFrameA,bg="green")
         self.bttn42.grid(row = 3, column = 1, sticky = WENS)
+        # myrectangle = canvas.create_rectangle(100, 100, 400, 400, fill='black')
+        # canvas.itemconfig(myrectangle, fill='red')
         #-----------------------------------------------------------------------
         self.bttn13 = tkinter.Button(self.controlFrameA,\
                                      text = "Normalize",\
@@ -355,7 +363,7 @@ class NormSpectra(tkinter.Tk):
         self.bttn43 = tkinter.Button(self.controlFrameA,\
                                     text = "Load DIBS",\
                                     command = self.onLoadDIBS)
-        self.bttn43.grid(row = 2, column = 2, sticky = WENS)
+        self.bttn43.grid(row = 3, column = 2, sticky = WENS)
         #=======================================================================
 
         self.backgroundColor = self.bttn11.cget("bg")
@@ -608,11 +616,11 @@ class NormSpectra(tkinter.Tk):
             self.appLogic.continuumRegionsLogic.regions = []
 
         self.appLogic.continuumRegionsLogic.updateRegionsAndPoints(self.appLogic.spectrum)
-        self.appLogic.continuum.wave = []
-        self.appLogic.continuum.flux = []
+        # self.appLogic.continuum.wave = []
+        # self.appLogic.continuum.flux = []
         if self.ifAutoUpdateNormalization:
             self.appLogic.normSpectrum()
-        self.onAlreadyNormed(reprint=False)
+        # self.onAlreadyNormed(reprint=False)
 
         contRegionsWaveAndFlux = self.appLogic.getContinuumRangesForPlot()
         self.replotUpdatedRanges(contRegionsWaveAndFlux, ifAutoscale=True)
