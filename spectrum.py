@@ -6,6 +6,8 @@ DESCRIPTION
 
 definition of Spectrum class
 """
+import os
+
 import pandas as pd
 
 def readSpectrum(filename,colWave=0,colFlux=1,skipRows=0):

@@ -4,15 +4,21 @@ import os
 import numpy as np
 import pandas as pd
 import copy
+import shutil
 from scipy.interpolate import Akima1DInterpolator
 import matplotlib.pyplot as plt
 from PyAstronomy import pyasl
+from astropy.io import fits
 
 import spectrum as sp
 import regionLogic
 import radialVelocity
 import specInterface
 import gridDefinitionsRead
+
+import molecfitUtils as mu
+
+import tkinter
 
 """
 DESCRIPTION
@@ -23,7 +29,7 @@ class normAppLogic:
 
     def __init__(self,):
         self.folderHANDY = os.path.dirname(os.path.abspath(__file__))
-        gridDefinitionsFile = self.folderHANDY+"/gridsDefinitions.yaml"
+        gridDefinitionsFile = os.path.join(self.folderHANDY, "gridsDefinitions.yaml")
 
         self.continuumRegionsLogic = regionLogic.RegionLogic()
         self.radialVelocityEstimator = radialVelocity.RadialVelocity()
@@ -39,6 +45,21 @@ class normAppLogic:
                                           flux=[])
         self.radialVelocity = 0.0
         self.oryginalWavelength = None
+
+    def _ask_multiple_choice_question(self,prompt,options):
+        # source: https://stackoverflow.com/questions/42581016/how-do-i-display-a-dialog-that-asks-the-user-multi-choice-question-using-tkinter
+        pass
+        #win = tkinter.Toplevel()
+        #if prompt:
+        #    tkinter.Label(win, text=prompt).pack()
+        #v = tkinter.IntVar()
+        #for i, option in enumerate(options):
+        #    tkinter.Radiobutton(win, text=option, variable=v, value=i).pack(anchor="w")
+        #tkinter.Button(text="Submit", command=win.destroy).pack()
+        #win.mainloop()
+        #if v.get() == 0:
+        #    return None
+        #return options[v.get()]
 
 
     def readSpectrum(self,fileName,colWave=0,colFlux=1,skipRows=0):
@@ -58,9 +79,28 @@ class normAppLogic:
             http://archive.eso.org/cms/eso-data/help/1dspectra.html
             https://www.hs.uni-hamburg.de/DE/Ins/Per/Czesla/PyA/PyA/pyaslDoc/aslDoc/readFitsSpec.html
             """
-            self.spectrum.wave, self.spectrum.flux = pyasl.read1dFitsSpec(fileName)
-            # self.spectrum.wave = self.spectrum.wave.byteswap().newbyteorder()
-            self.spectrum.flux = self.spectrum.flux.byteswap().newbyteorder() #TODO PyAstronomy bug
+            self.spectrum.wave = None
+            self.spectrum.flux = None
+
+            # Search FITS data for Molecfit keywords
+            waveKey = "lambda"  # use orignal wavelength not the the molecfit corrected
+            fluxKey = "cflux"  # use telluric absorption corrected flux
+            dataKeys = [waveKey, fluxKey]
+            fitsFile = fits.open(fileName)
+            for hdu in fitsFile:
+                if hdu.data is None or not hasattr(hdu.data, 'names'):
+                    continue
+                if all(name in hdu.data.names for name in dataKeys):
+                    self.spectrum.wave = hdu.data[waveKey]
+                    self.spectrum.flux = hdu.data[fluxKey]
+                    self.spectrum.wave = self.spectrum.wave * 1000  # micrometre to nanometre
+                    break
+            fitsFile.close()
+
+            # If no Molecfit formated data is found, fall back to pyastronomy solution used in main version of HANDY
+            if self.spectrum.wave is None or self.spectrum.flux is None:
+                self.spectrum.wave, self.spectrum.flux = pyasl.read1dFitsSpec(fileName)
+                self.spectrum.flux = self.spectrum.flux.byteswap().newbyteorder()  # TODO PyAstronomy bug
             self.spectrum.name = fileName
         self.radialVelocity = 0.0
         self.oryginalWavelength = copy.deepcopy(self.spectrum.wave)
@@ -68,7 +108,7 @@ class normAppLogic:
 
     def saveSpectrum(self,fileName):
         sp.saveSpectrum(fileName,self.spectrum)
-        print("INFO : %s saved!"%fileName)
+        print(f"SAVED: {fileName}")
 
     def readTheoreticalSpectrum(self,fileName,colWave=0,colFlux=1,skipRows=0):
         self.theoreticalSpectrum = sp.readSpectrum(fileName,\
@@ -94,11 +134,39 @@ class normAppLogic:
         else:
             print("Saving corrected for radial velocity.")
         sp.saveSpectrum(fileName,saveSpectrum)
-        print("INFO : %s saved!"%fileName)
+        print(f"SAVED:{fileName}")
 
     def saveTheoreticalSpectrum(self,fileName):
         sp.saveSpectrum(fileName,self.theoreticalSpectrum)
-        print("INFO : %s saved!"%fileName)
+        print(f"SAVED: {fileName}")
+
+    def saveToFITS(self,fileName):
+        # Save Normed Spectrum, Continuum and Continuum Mask to Molecfit FITS file
+        fileNameRoot, fileNameExt = os.path.splitext(os.path.basename(fileName))
+        fileNameOut = os.path.join(os.path.dirname(fileName), f'{fileNameRoot}_handy{fileNameExt}')
+
+        # Find the right HDU index (if possible) and save the names of the data columns
+        if os.path.exists(fileNameOut):
+            shutil.copy(fileName, fileNameOut)
+        hduIndex, dataColumnNames = mu.findHDUIndex(fileNameOut)
+
+        # Prepare continuum mask and polynomial mask
+        cmask, pmask = mu.regions2mask(self.spectrum.wave, self.continuumRegionsLogic.regions)
+        pmask = mu.forward_fill_ifsame(pmask)
+
+        # Prepare polynomial coefficients - since the fit results are not saved we need to recreate them
+        cpolys = mu.refitContinuum(self, cmask, pmask)
+
+        # gather all necessary data arrays into one dictionary
+        dataArrays = mu.prepareOutputDataArrays(self, cmask, pmask)
+
+        # Update FITS data
+        mu.wrapFITSdata(fileNameOut, dataArrays, dataColumnNames, hduIndex)
+
+        # Update FITS header
+        mu.updateFITSheader(fileNameOut, cpolys, hduIndex)
+        print(f"SAVED: {fileNameOut}")
+
 
     def plotSpectrum(self):
         if self.spectrum.wave is not None:
@@ -166,7 +234,7 @@ class normAppLogic:
             for w,f in region:
                 wReg.extend(w)
                 fReg.extend(f)
-            wRegOut = np.linspace(wReg[0],wReg[-1],max((wReg[-1]-wReg[0])/separation,1))
+            wRegOut = np.linspace(wReg[0],wReg[-1],int(max((wReg[-1]-wReg[0])/separation,1)))
             try:
                 fRegOut = self.fitFunction(wReg,fReg,wRegOut,1,ord)
             except Exception as e:
@@ -210,15 +278,15 @@ class normAppLogic:
 def testLoadSaveSpectrum():
     nal=normAppLogic()
 
-    nal.readSpectrum("exampleData/803432iuw.txt",skipRows=1)
-    nal.saveSpectrum("exampleData/saveTest.txt")
+    nal.readSpectrum(os.path.join("exampleData", "803432iuw.txt"),skipRows=1)
+    nal.saveSpectrum(os.path.join("exampleData", "saveTest.txt"))
 
     print(nal.spectrum)
     #nal.plotSpectrum()
 
 def testGetContinuum():
     nal=normAppLogic()
-    nal.readSpectrum("exampleData/803432iuw.txt",skipRows=1)
+    nal.readSpectrum(os.path.join("exampleData", "803432iuw.txt"),skipRows=1)
 
     nal.continuumRegionsLogic.addRegion([4850,4890])
     nal.continuumRegionsLogic.addRegion([5000,5100])

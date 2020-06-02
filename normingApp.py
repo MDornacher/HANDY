@@ -18,6 +18,8 @@ import glob
 
 import normAppLogic
 
+import molecfitUtils as mu
+
 class NormSpectra(tkinter.Tk):
 
 
@@ -33,6 +35,8 @@ class NormSpectra(tkinter.Tk):
         self.numberOfActiveRegion = 0
 
         self.radVelDialog = None
+
+        self.fileList = []
 
     def __init__(self):
         tkinter.Tk.__init__(self)
@@ -59,7 +63,7 @@ class NormSpectra(tkinter.Tk):
         menu = tkinter.Menu(self)
         self.config(menu=menu)
         #------------------------------------
-        fileMenu1 = tkinter.Menu(menu)
+        fileMenu1 = tkinter.Menu(menu, tearoff=0)
         menu.add_cascade(label="Open", underline=0, menu=fileMenu1)
         fileMenu1.add_command(label="Open spectrum", command=self.onOpenSpectrum)
         fileMenu1.add_command(label="Open continuum file",\
@@ -67,8 +71,9 @@ class NormSpectra(tkinter.Tk):
         fileMenu1.add_command(label="Open theoretical spectrum",\
                               command=self.onLoadTheoreticalSectrum)
         fileMenu1.add_command(label="Exit", underline=0, command=self.onExit)
+        fileMenu1.insert_separator(3)
         #------------------------------------
-        fileMenu2 = tkinter.Menu(menu)
+        fileMenu2 = tkinter.Menu(menu, tearoff=0)
         menu.add_cascade(label="Save", underline=0, menu=fileMenu2)
         fileMenu2.add_command(label="Save normed spectrum",\
                               command=self.onSaveNormedSpectrum)
@@ -78,8 +83,13 @@ class NormSpectra(tkinter.Tk):
                               command=self.onSaveContinuum)
         fileMenu2.add_command(label="Save theoretical spectrum",\
                               command=self.onSaveTheoreticalSpectrum)
+        fileMenu2.add_command(label="Quick save",\
+                              command=self.onQuickSave)
+        fileMenu2.add_command(label="Save to FITS file",\
+                              command=self.onFITSSave)
+        fileMenu2.insert_separator(4)
         #------------------------------------
-        fileMenu3 = tkinter.Menu(menu)
+        fileMenu3 = tkinter.Menu(menu, tearoff=0)
         menu.add_cascade(label="Grids", underline=0, menu=fileMenu3)
         self.vlevel = tkinter.IntVar()
         lG = self.appLogic.gridDefinitions.listAvailibleGrids()
@@ -134,11 +144,14 @@ class NormSpectra(tkinter.Tk):
             self.meScale['from_'] ,self.meScale['to'] = minim, maxim
 
     def onOpenSpectrum(self):
+        self.bttn42.configure(bg="red")
         dirname = os.getcwd()
         ftypes = [('All files', '*'),('FITS files', '*fits'),('Plain text', '*.txt *.dat')]
         answer = filedialog.askopenfilenames(title="Open spectrum...", initialdir=dirname, filetypes=ftypes)
         if answer:
-            fileName = answer[0]
+            self.fileList = [os.path.normpath(p) for p in answer]
+            fileName = self.fileList[0]
+            self.wm_title(os.path.basename(fileName))
             skipRows=1
             colWave=0
             colFlux=1
@@ -147,21 +160,36 @@ class NormSpectra(tkinter.Tk):
                                        colFlux=colFlux,\
                                        skipRows=skipRows)
 
+            extContinuum = fileName.replace(".fits", ".cont")
+            if os.path.exists(extContinuum):
+                self.onLoadContinuum(extContinuum=extContinuum)
+            else:
+                self.appLogic.continuumRegionsLogic.orders = []
+                self.appLogic.continuumRegionsLogic.regions = []
+
+
         self.appLogic.continuumRegionsLogic.updateRegionsAndPoints(self.appLogic.spectrum)
-        self.appLogic.continuum.wave = []
-        self.appLogic.continuum.flux = []
+        # self.appLogic.continuum.wave = []
+        # self.appLogic.continuum.flux = []
         if self.ifAutoUpdateNormalization:
             self.appLogic.normSpectrum()
-        self.onAlreadyNormed(reprint = False)
+        # self.onAlreadyNormed(reprint = False)
 
         contRegionsWaveAndFlux = self.appLogic.getContinuumRangesForPlot()
         self.replotUpdatedRanges(contRegionsWaveAndFlux,ifAutoscale=True)
 
+        # TODO: stupid fix to reset key press events
+        # self.canvas.mpl_connect('key_press_event', self.onKeyPress)
+        self.bttn42.configure(bg="green")
 
-    def onLoadContinuum(self):
-        dirname = os.getcwd()
-        ftypes = [('Plain text', '*.cont'),('All files', '*')]
-        answer = filedialog.askopenfilenames(title="Open ranges file...", initialdir=dirname, filetypes=ftypes)
+    def onLoadContinuum(self, extContinuum=None):
+        if not extContinuum:
+            dirname = os.getcwd()
+            ftypes = [('Plain text', '*.cont'),('All files', '*')]
+            answer = filedialog.askopenfilenames(title="Open ranges file...", initialdir=dirname, filetypes=ftypes)
+        else:
+            answer = [extContinuum]
+
         if answer:
             fileName = answer[0]
             self.appLogic.continuumRegionsLogic.readRegionsFile(self.appLogic.spectrum,\
@@ -200,8 +228,8 @@ class NormSpectra(tkinter.Tk):
 
     def onSaveNormedSpectrum(self):
         initialName = "out.norm"
-        if self.appLogic.spectrum.name is not None:
-            initialName = self.appLogic.spectrum.name.split('.')[-2]+".norm"
+        if self.appLogic.spectrum.name:
+            initialName = os.path.basename(self.appLogic.spectrum.name).replace(".fits", ".norm")
         fileName = filedialog.asksaveasfilename(initialfile=initialName)
         if fileName and self.appLogic.spectrum.wave is not None:
             # self.appLogic.saveNormedSpectrum(fileName,self.ifSaveCorrectedvrad.get())
@@ -209,7 +237,7 @@ class NormSpectra(tkinter.Tk):
 
     def onSaveVelocityCorrectedNormedSpectrum(self):
         initialName = "out.norm"
-        if self.appLogic.spectrum.name is not None:
+        if self.appLogic.spectrum.name:
             initialName = self.appLogic.spectrum.name.split('.')[-2]+"_rv.norm"
         fileName = filedialog.asksaveasfilename(initialfile=initialName)
         if fileName and self.appLogic.spectrum.wave is not None:
@@ -218,8 +246,8 @@ class NormSpectra(tkinter.Tk):
 
     def onSaveContinuum(self):
         initialName = "out.cont"
-        if self.appLogic.spectrum.name is not None:
-            initialName = self.appLogic.spectrum.name.split('.')[-2]+".cont"
+        if self.appLogic.spectrum.name:
+            initialName = os.path.basename(self.appLogic.spectrum.name).replace(".fits", ".cont")
         fileName = filedialog.asksaveasfilename(initialfile=initialName)
         if fileName and self.appLogic.spectrum.wave is not None:
             self.appLogic.continuumRegionsLogic.saveRegionsFile(self.appLogic.spectrum,\
@@ -232,6 +260,32 @@ class NormSpectra(tkinter.Tk):
         fileName = filedialog.asksaveasfilename(initialfile=initialName)
         if fileName and self.appLogic.theoreticalSpectrum.wave is not None:
             self.appLogic.saveTheoreticalSpectrum(fileName)
+
+    def onQuickSave(self):
+        self.bttn42.configure(bg="red")
+        # TODO: spectrum.wave is not always the right question; should be region, continuum, etc.
+        # Save Normed Spectrum
+        fileName = os.path.normpath(self.appLogic.spectrum.name).replace(".fits", ".norm")
+        if fileName and self.appLogic.spectrum.wave is not None:
+            # self.appLogic.saveNormedSpectrum(fileName,self.ifSaveCorrectedvrad.get())
+            self.appLogic.saveNormedSpectrum(fileName,False)
+
+        # Save Continuum
+        fileName = os.path.normpath(self.appLogic.spectrum.name).replace(".fits", ".cont")
+        if fileName and self.appLogic.spectrum.wave is not None:
+            self.appLogic.continuumRegionsLogic.saveRegionsFile(self.appLogic.spectrum, fileName)
+
+        # Save Normed Spectrum, Continuum and Continuum Mask to Molecfit FITS file
+        fileName = os.path.normpath(self.appLogic.spectrum.name)
+        if fileName and self.appLogic.spectrum.wave is not None:
+            self.appLogic.saveToFITS(fileName)
+        self.bttn42.configure(bg="green")
+
+    def onFITSSave(self):
+        # Save Normed Spectrum, Continuum and Continuum Mask to Molecfit FITS file
+        fileName = os.path.normpath(self.appLogic.spectrum.name)
+        if fileName and self.appLogic.spectrum.wave is not None:
+            self.appLogic.saveToFITS(fileName)
 
     def createControls(self):
         # Create several frames for grouping buttons
@@ -284,8 +338,12 @@ class NormSpectra(tkinter.Tk):
                                     command = self.onAutoFitSpecialPoints)
         self.bttn32.grid(row = 2, column = 1, sticky = WENS)
 
-        self.bttn42 = tkinter.Label(self.controlFrameA, text=" <--- Adjust order")
+        # self.bttn42 = tkinter.Label(self.controlFrameA, text=" <--- Adjust order")
+        # self.bttn42.grid(row = 3, column = 1, sticky = WENS)
+        self.bttn42 = tkinter.Button(self.controlFrameA,bg="green")
         self.bttn42.grid(row = 3, column = 1, sticky = WENS)
+        # myrectangle = canvas.create_rectangle(100, 100, 400, 400, fill='black')
+        # canvas.itemconfig(myrectangle, fill='red')
         #-----------------------------------------------------------------------
         self.bttn13 = tkinter.Button(self.controlFrameA,\
                                      text = "Normalize",\
@@ -301,6 +359,11 @@ class NormSpectra(tkinter.Tk):
                                     text = "Radial velocity",\
                                     command = self.onRadialVelocity)
         self.bttn33.grid(row = 2, column = 2, sticky = WENS)
+
+        self.bttn43 = tkinter.Button(self.controlFrameA,\
+                                    text = "Load DIBS",\
+                                    command = self.onLoadDIBS)
+        self.bttn43.grid(row = 3, column = 2, sticky = WENS)
         #=======================================================================
 
         self.backgroundColor = self.bttn11.cget("bg")
@@ -530,7 +593,37 @@ class NormSpectra(tkinter.Tk):
         self.span.set_visible(True)
 
     def onNextSpectrum(self):
-        pass
+        # self.onQuickSave()  # TODO: this should not be here by default
+        if not self.appLogic.spectrum.name:  # do nothing if no files yet selected
+            return
+        currentIndex = self.fileList.index(self.appLogic.spectrum.name)
+        nextIndex = (currentIndex + 1) % len(self.fileList)
+        fileName = os.path.normpath(self.fileList[nextIndex])
+        self.wm_title(os.path.basename(fileName))
+        skipRows = 1
+        colWave = 0
+        colFlux = 1
+        self.appLogic.readSpectrum(fileName, \
+                                   colWave=colWave, \
+                                   colFlux=colFlux, \
+                                   skipRows=skipRows)
+
+        extContinuum = fileName.replace(".fits", ".cont")
+        if os.path.exists(extContinuum):
+            self.onLoadContinuum(extContinuum=extContinuum)
+        else:
+            self.appLogic.continuumRegionsLogic.orders = []
+            self.appLogic.continuumRegionsLogic.regions = []
+
+        self.appLogic.continuumRegionsLogic.updateRegionsAndPoints(self.appLogic.spectrum)
+        # self.appLogic.continuum.wave = []
+        # self.appLogic.continuum.flux = []
+        if self.ifAutoUpdateNormalization:
+            self.appLogic.normSpectrum()
+        # self.onAlreadyNormed(reprint=False)
+
+        contRegionsWaveAndFlux = self.appLogic.getContinuumRangesForPlot()
+        self.replotUpdatedRanges(contRegionsWaveAndFlux, ifAutoscale=True)
 
     def onAutoFitSpecialPoints(self):
         self.appLogic.continuumRegionsLogic.autoFitPoints(self.appLogic.theoreticalSpectrum)
@@ -544,6 +637,15 @@ class NormSpectra(tkinter.Tk):
         self.appLogic.normSpectrum()
         if self.appLogic.spectrum.wave is not None:
             self.updateNormedPlot()
+            self.canvas.draw()
+
+    def onLoadDIBS(self):
+        dibs = mu.loadDIBs()
+        self.updateNormedPlot()
+        if self.appLogic.spectrum.wave is not None:
+            for dib in dibs[(dibs >= self.appLogic.spectrum.wave.min()) & (dibs <= self.appLogic.spectrum.wave.max())]:
+                self.ax1.axvline(x=dib, color='green', alpha=0.5)
+                # self.ax2.axvline(x=dib, color='green', alpha=0.5) # TODO: the resetting does not work yet
             self.canvas.draw()
 
     def onSetAutoUpdateNormalization(self):
@@ -662,11 +764,9 @@ class NormSpectra(tkinter.Tk):
     def onKeyPress(self,event):
         if event.key == 'n':
             if self.appLogic.spectrum.name is not None:
-                fit = os.path.dirname(self.appLogic.spectrum.name)+"/*fits"
-                # print(self.appLogic.spectrum.name)
-                # print(fit)
-                filesInFolder=glob.glob(fit)
-                filesInFolder.sort()
+                valid_fit = os.path.join(os.path.dirname(self.appLogic.spectrum.name), "*.fits")
+                output_fit = os.path.join(os.path.dirname(self.appLogic.spectrum.name), "*handy.fits")  # TODO: might change
+                filesInFolder = list(set(glob.glob(valid_fit)) - set(glob.glob(output_fit)))
                 n = filesInFolder.index(self.appLogic.spectrum.name) + 1
                 if n < len(filesInFolder):
                     fileName = filesInFolder[n]
@@ -684,8 +784,10 @@ class NormSpectra(tkinter.Tk):
                     self.replotUpdatedRanges(contRegionsWaveAndFlux,ifAutoscale=True)
                 else:
                     print("Last spectrum in choosen folder!")
+        if event.key == 's':
+            self.onQuickSave()
         key_press_handler(event, self.canvas, self.toolbar)
-        print("TODO: add some shortcuts to buttons")
+        # TODO: add some shortcuts to buttons"
 
     def onPlotClick(self,event):
         if self.toolbar.mode!='':
