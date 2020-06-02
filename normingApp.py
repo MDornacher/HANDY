@@ -179,7 +179,7 @@ class NormSpectra(tkinter.Tk):
         self.replotUpdatedRanges(contRegionsWaveAndFlux,ifAutoscale=True)
 
         # TODO: stupid fix to reset key press events
-        self.canvas.mpl_connect('key_press_event', self.onKeyPress)
+        # self.canvas.mpl_connect('key_press_event', self.onKeyPress)
         self.bttn42.configure(bg="green")
 
     def onLoadContinuum(self, extContinuum=None):
@@ -593,7 +593,7 @@ class NormSpectra(tkinter.Tk):
         self.span.set_visible(True)
 
     def onNextSpectrum(self):
-        self.onQuickSave()  # TODO: this should not be here by default
+        # self.onQuickSave()  # TODO: this should not be here by default
         if not self.appLogic.spectrum.name:  # do nothing if no files yet selected
             return
         currentIndex = self.fileList.index(self.appLogic.spectrum.name)
@@ -766,11 +766,7 @@ class NormSpectra(tkinter.Tk):
             if self.appLogic.spectrum.name is not None:
                 valid_fit = os.path.join(os.path.dirname(self.appLogic.spectrum.name), "*.fits")
                 output_fit = os.path.join(os.path.dirname(self.appLogic.spectrum.name), "*handy.fits")  # TODO: might change
-                # print(self.appLogic.spectrum.name)
-                # print(fit)
-                # filesInFolder=glob.glob(fit)
                 filesInFolder = list(set(glob.glob(valid_fit)) - set(glob.glob(output_fit)))
-                # filesInFolder.sort()
                 n = filesInFolder.index(self.appLogic.spectrum.name) + 1
                 if n < len(filesInFolder):
                     fileName = filesInFolder[n]

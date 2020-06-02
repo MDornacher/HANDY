@@ -119,3 +119,61 @@ def updateFITSheader(fileNameOut, cpolys, hduIndex):
 
             for c_count, coefficient in enumerate(coefficients):
                 header.append((f"{entry_name}_{c_count}", coefficient, f"{c_count} Chebyshev coefficient"))
+
+
+def wrapFITSdata(fileNameOut, dataArrays, dataColumnNames, hduIndex):
+    for columnName, dataArray in dataArrays.items():
+        dataFormat = "D"  # TODO: ༼ つ ◕_◕ ༽つ GIVE FORMAT FROM ARRAY PLS
+        if columnName in dataColumnNames:
+            # Again, very ugly but prevents updating of wavelength and flux
+            # which is only there because of non-molecfit FITS files
+            if columnName not in ["lambda", "flux"]:
+                updateFITSdata(fileNameOut, columnName, dataFormat, dataArray, hduIndex)
+        elif hduIndex:
+            appendToFITSdata(fileNameOut, columnName, dataFormat, dataArray, hduIndex)
+        else:
+            # This should only be necessary once
+            hduIndex = newFITSdata(fileNameOut, columnName, dataFormat, dataArray)
+
+
+def findHDUIndex(fileName):
+    hduIndex = None
+    tmpIndex = 0
+    dataColumnNames = []
+
+    # Search FITS data for Molecfit or HANDY keywords
+    dataKeys = ["lambda", "flux", "cflux", "norm", "cont", "cmask", "pmask"]
+
+    fitsFile = fits.open(fileName, memmap=False)
+    for hdu in fitsFile:
+        if hdu.data is None or not hasattr(hdu.data, 'names'):
+            tmpIndex += 1
+            continue
+        if any(name in hdu.data.names for name in dataKeys):
+            hduIndex = tmpIndex
+            dataColumnNames = hdu.data.names
+            break
+        tmpIndex += 1
+    return hduIndex, dataColumnNames
+
+
+def refitContinuum(normAppLogic, cmask, pmask):
+    cpolys = []
+    for id_count, degree in enumerate(normAppLogic.continuumRegionsLogic.orders, 1):
+        mask = (pmask != id_count) & (cmask != 1)
+        coefficients = np.polynomial.chebyshev.chebfit(np.ma.masked_array(normAppLogic.spectrum.wave, mask=mask),
+                                                       np.ma.masked_array(normAppLogic.spectrum.flux, mask=mask),
+                                                       degree)
+        cpolys.append(coefficients)
+    return cpolys
+
+def prepareOutputDataArrays(normAppLogic, cmask, pmask):
+    dataArrays = {"lambda": normAppLogic.spectrum.wave,
+                  "flux": normAppLogic.spectrum.flux,
+                  "norm": normAppLogic.normedSpectrum.flux,
+                  "cont": normAppLogic.continuum.flux,
+                  "cmask": cmask,
+                  "pmask": pmask,
+                  # "spoints": np.zeros(len(self.normedSpectrum.flux))  # TODO: Special points for things like balmer jump
+                  }  # TODO: Is there a better solution for this?
+    return dataArrays

@@ -146,66 +146,22 @@ class normAppLogic:
         fileNameOut = os.path.join(os.path.dirname(fileName), f'{fileNameRoot}_handy{fileNameExt}')
 
         # Find the right HDU index (if possible) and save the names of the data columns
-        hduIndex = None
         if os.path.exists(fileNameOut):
-            # Search FITS data for Molecfit or HANDY keywords
-            dataKeys = ["lambda", "flux", "cflux", "norm", "cont", "cmask", "pmask"]
-            tmpIndex = 0
-
-            fitsFile = fits.open(fileNameOut, memmap=False)
-            for hdu in fitsFile:
-                if hdu.data is None or not hasattr(hdu.data, 'names'):
-                    tmpIndex += 1
-                    continue
-                if any(name in hdu.data.names for name in dataKeys):
-                    hduIndex = tmpIndex
-                    dataColumnNames = fitsFile[hduIndex].data.names
-                    break
-                tmpIndex += 1
-
-            if not hduIndex:
-                dataColumnNames = []
-            fitsFile.close()
-        else:
             shutil.copy(fileName, fileNameOut)
-            dataColumnNames = []
+        hduIndex, dataColumnNames = mu.findHDUIndex(fileNameOut)
 
         # Prepare continuum mask and polynomial mask
         cmask, pmask = mu.regions2mask(self.spectrum.wave, self.continuumRegionsLogic.regions)
         pmask = mu.forward_fill_ifsame(pmask)
 
-        # Prepare polynomial coefficients
-        # since the fit results are not saved we need to recreate them
-        cpolys = []
-        for id_count, degree in enumerate(self.continuumRegionsLogic.orders, 1):
-            mask = (pmask != id_count) & (cmask != 1)
-            coefficients = np.polynomial.chebyshev.chebfit(np.ma.masked_array(self.spectrum.wave, mask=mask),
-                                                           np.ma.masked_array(self.spectrum.flux, mask=mask),
-                                                           degree)
-            cpolys.append(coefficients)
+        # Prepare polynomial coefficients - since the fit results are not saved we need to recreate them
+        cpolys = mu.refitContinuum(self, cmask, pmask)
 
-        dataArrays = {"lambda": self.spectrum.wave,
-                      "flux": self.spectrum.flux,
-                      "norm": self.normedSpectrum.flux,
-                      "cont": self.continuum.flux,
-                      "cmask": cmask,
-                      "pmask": pmask,
-                      # "spoints": np.zeros(len(self.normedSpectrum.flux))  # TODO: Special points for things like balmer jump
-                      }  # TODO: Is there a better solution for this?
+        # gather all necessary data arrays into one dictionary
+        dataArrays = mu.prepareOutputDataArrays(self, cmask, pmask)
 
         # Update FITS data
-        for columnName, dataArray in dataArrays.items():
-            dataFormat = "D"  # TODO: ༼ つ ◕_◕ ༽つ GIVE FORMAT FROM ARRAY PLS
-            if columnName in dataColumnNames:
-                # Again, very ugly but prevents updating of wavelength and flux
-                # which is only there because of non-molecfit FITS files
-                if columnName not in ["lambda", "flux"]:
-                    mu.updateFITSdata(fileNameOut, columnName, dataFormat, dataArray, hduIndex)
-            elif hduIndex:
-                mu.appendToFITSdata(fileNameOut, columnName, dataFormat, dataArray, hduIndex)
-            else:
-                # This should only be necessary once
-                hduIndex = mu.newFITSdata(fileNameOut, columnName, dataFormat, dataArray)
+        mu.wrapFITSdata(fileNameOut, dataArrays, dataColumnNames, hduIndex)
 
         # Update FITS header
         mu.updateFITSheader(fileNameOut, cpolys, hduIndex)
